@@ -11,7 +11,7 @@ long_description = f.read().strip()
 f.close()
 
 install_requires = [
-    'aiohttp',
+    'aiohttp>1.3,<2.0.0',
     'elasticsearch>=5.0.0',
 ]
 
