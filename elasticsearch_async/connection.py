@@ -12,7 +12,7 @@ from .helpers import ensure_future
 class AIOHttpConnection(Connection):
     def __init__(self, host='localhost', port=9200, http_auth=None,
             use_ssl=False, verify_certs=False, ca_certs=None, client_cert=None,
-            client_key=None, loop=None, use_dns_cache=True, **kwargs):
+            client_key=None, loop=None, use_dns_cache=True, ssl_context=None, **kwargs):
         super().__init__(host=host, port=port, **kwargs)
 
         self.loop = asyncio.get_event_loop() if loop is None else loop
@@ -30,6 +30,7 @@ class AIOHttpConnection(Connection):
                 loop=self.loop,
                 verify_ssl=verify_certs,
                 conn_timeout=self.timeout,
+                ssl_context=ssl_context,
                 use_dns_cache=use_dns_cache,
             )
         )
