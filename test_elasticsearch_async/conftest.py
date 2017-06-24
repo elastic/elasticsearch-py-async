@@ -1,24 +1,24 @@
 import asyncio
 import json
-from urllib.parse import urlparse, parse_qsl
+from urllib.parse import urlparse
 
-from aiohttp.server import ServerHttpProtocol
-from aiohttp import Response
-
-from pytest import yield_fixture, fixture
+from aiohttp.web import Response
+from aiohttp.web_server import Server
+from pytest import fixture
 
 from elasticsearch_async import AIOHttpConnection, AsyncElasticsearch
 
 
-@yield_fixture
+@fixture
 def connection(event_loop, server, port):
     connection = AIOHttpConnection(port=port, loop=event_loop)
     yield connection
-    event_loop.run_until_complete(connection.close())
+    connection.close()
 
-class DummyElasticsearch(ServerHttpProtocol):
+
+class DummyElasticsearch(Server):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(handler=self.handler, **kwargs)
         self._responses = {}
         self.calls = []
 
@@ -26,14 +26,15 @@ class DummyElasticsearch(ServerHttpProtocol):
         self._responses[path] = status, response
 
     @asyncio.coroutine
-    def handle_request(self, message, payload):
-        url = urlparse(message.path)
+    def handler(self, request):
+        payload = request.content
+        url = urlparse(request.path)
 
-        params = dict(parse_qsl(url.query))
+        params = dict(request.query)
         body = yield from payload.read()
         body = json.loads(body.decode('utf-8')) if body else ''
 
-        self.calls.append((message.method, url.path, body, params))
+        self.calls.append((request.method, url.path, body, params))
 
         if url.path in self._responses:
             status, body = self._responses.pop(url.path)
@@ -42,7 +43,7 @@ class DummyElasticsearch(ServerHttpProtocol):
         else:
             status = 200
             body = {
-                'method': message.method,
+                'method': request.method,
                 'params': params,
                 'path': url.path,
                 'body': body
@@ -50,10 +51,7 @@ class DummyElasticsearch(ServerHttpProtocol):
 
         out = json.dumps(body).encode('utf-8')
 
-        response = Response(self.writer, status)
-        response.send_headers()
-        response.write(out)
-        yield from response.write_eof()
+        return Response(status=status, body=out, content_type='application/json')
 
 i = 0
 @fixture
@@ -65,11 +63,15 @@ def port():
 @fixture
 def server(event_loop, port):
     server = DummyElasticsearch(debug=True, keep_alive=75)
-    f = event_loop.create_server(lambda: server, '127.0.0.1', port)
-    event_loop.run_until_complete(f)
-    return server
+    event_loop.run_until_complete(
+        event_loop.create_server(server, '127.0.0.1', port)
+    )
+    yield server
+    event_loop.run_until_complete(server.shutdown())
 
-@yield_fixture
+
+
+@fixture
 def client(event_loop, server, port):
     c = AsyncElasticsearch([{'host': '127.0.0.1','port': port}], loop=event_loop)
     yield c
