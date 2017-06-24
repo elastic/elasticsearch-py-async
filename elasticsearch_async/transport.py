@@ -128,7 +128,7 @@ class AsyncTransport(Transport):
         # close those connections that are not in use any more
         for c in orig_connections:
             if c not in self.connection_pool.connections:
-                yield from c.close()
+                c.close()
 
     @asyncio.coroutine
     def main_loop(self, method, url, params, body, ignore=(), timeout=None):

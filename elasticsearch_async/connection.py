@@ -1,13 +1,11 @@
 import asyncio
 
 import aiohttp
-from aiohttp.errors import FingerprintMismatch, ClientError
+from aiohttp.client_exceptions import ServerFingerprintMismatch, ClientError
 
 from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, SSLError
 from elasticsearch.connection import Connection
 from elasticsearch.compat import urlencode
-
-from .helpers import ensure_future
 
 class AIOHttpConnection(Connection):
     def __init__(self, host='localhost', port=9200, http_auth=None,
@@ -24,14 +22,14 @@ class AIOHttpConnection(Connection):
             if isinstance(http_auth, (tuple, list)):
                 http_auth = aiohttp.BasicAuth(*http_auth)
 
+        tcp_connector = aiohttp.TCPConnector(
+            loop=self.loop,
+            verify_ssl=verify_certs,
+            use_dns_cache=use_dns_cache)
         self.session = aiohttp.ClientSession(
             auth=http_auth,
-            connector=aiohttp.TCPConnector(
-                loop=self.loop,
-                verify_ssl=verify_certs,
-                conn_timeout=self.timeout,
-                use_dns_cache=use_dns_cache,
-            )
+            conn_timeout=self.timeout,
+            connector=tcp_connector
         )
 
         self.base_url = 'http%s://%s:%d%s' % (
@@ -40,7 +38,7 @@ class AIOHttpConnection(Connection):
         )
 
     def close(self):
-        return ensure_future(self.session.close())
+        return self.session.close()
 
     @asyncio.coroutine
     def perform_request(self, method, url, params=None, body=None, timeout=None, ignore=()):
@@ -59,7 +57,7 @@ class AIOHttpConnection(Connection):
 
         except Exception as e:
             self.log_request_fail(method, url, url_path, body, self.loop.time() - start, exception=e)
-            if isinstance(e, FingerprintMismatch):
+            if isinstance(e, ServerFingerprintMismatch):
                 raise SSLError('N/A', str(e), e)
             if isinstance(e, asyncio.TimeoutError):
                 raise ConnectionTimeout('TIMEOUT', str(e), e)

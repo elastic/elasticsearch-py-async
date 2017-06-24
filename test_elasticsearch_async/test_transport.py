@@ -19,6 +19,7 @@ def test_sniff_on_start_sniffs(server, event_loop, port, sniff_data):
 
     assert 1 == len(connections)
     assert 'http://node1:9200' == connections[0].host
+    client.transport.close()
 
 @mark.asyncio
 def test_retry_will_work(port, server, event_loop):
