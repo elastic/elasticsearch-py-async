@@ -1,18 +1,18 @@
 import asyncio
 
 import aiohttp
-from aiohttp.errors import FingerprintMismatch, ClientError
+from aiohttp.client_exceptions import ServerFingerprintMismatch
 
 from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, SSLError
 from elasticsearch.connection import Connection
 from elasticsearch.compat import urlencode
 
-from .helpers import ensure_future
 
 class AIOHttpConnection(Connection):
     def __init__(self, host='localhost', port=9200, http_auth=None,
-            use_ssl=False, verify_certs=False, ca_certs=None, client_cert=None,
-            client_key=None, loop=None, use_dns_cache=True, **kwargs):
+                 use_ssl=False, verify_certs=False, ca_certs=None,
+                 client_cert=None, client_key=None, loop=None,
+                 use_dns_cache=True, **kwargs):
         super().__init__(host=host, port=port, **kwargs)
 
         self.loop = asyncio.get_event_loop() if loop is None else loop
@@ -29,7 +29,7 @@ class AIOHttpConnection(Connection):
             connector=aiohttp.TCPConnector(
                 loop=self.loop,
                 verify_ssl=verify_certs,
-                conn_timeout=self.timeout,
+                keepalive_timeout=self.timeout,
                 use_dns_cache=use_dns_cache,
             )
         )
@@ -40,7 +40,7 @@ class AIOHttpConnection(Connection):
         )
 
     def close(self):
-        return ensure_future(self.session.close())
+        return self.session.close()
 
     @asyncio.coroutine
     def perform_request(self, method, url, params=None, body=None, timeout=None, ignore=()):
@@ -52,14 +52,14 @@ class AIOHttpConnection(Connection):
         start = self.loop.time()
         response = None
         try:
-            with aiohttp.Timeout(timeout or self.timeout):
-                response = yield from self.session.request(method, url, data=body)
-                raw_data = yield from response.text()
+            response = yield from self.session.request(
+                method, url, data=body, timeout=timeout or self.timeout)
+            raw_data = yield from response.text()
             duration = self.loop.time() - start
 
         except Exception as e:
             self.log_request_fail(method, url, url_path, body, self.loop.time() - start, exception=e)
-            if isinstance(e, FingerprintMismatch):
+            if isinstance(e, ServerFingerprintMismatch):
                 raise SSLError('N/A', str(e), e)
             if isinstance(e, asyncio.TimeoutError):
                 raise ConnectionTimeout('TIMEOUT', str(e), e)

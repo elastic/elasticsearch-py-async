@@ -58,7 +58,7 @@ def test_error_is_properly_logged(connection, caplog, port, server):
 def test_timeout_is_properly_raised(connection, server):
     @asyncio.coroutine
     def slow_request():
-        yield from asyncio.sleep(0.01)
+        yield from asyncio.sleep(1)
         return {}
     server.register_response('/_search', slow_request())
 
