@@ -38,11 +38,11 @@ def test_404_properly_raised(server, client):
         yield from client.get(index='i', doc_type='t', id=42)
 
 @mark.asyncio
-def test_body_gets_passed_properly(client):
+def test_body_gets_passed_properly(server, client):
     data = yield from client.index(index='i', doc_type='t', id='42', body={'some': 'data'})
     assert  {'body': {'some': 'data'}, 'method': 'PUT', 'params': {}, 'path': '/i/t/42'} == data
 
 @mark.asyncio
-def test_params_get_passed_properly(client):
+def test_params_get_passed_properly(server, client):
     data = yield from client.info(params={'some': 'data'})
     assert  {'body': '', 'method': 'GET', 'params': {'some': 'data'}, 'path': '/'} == data
