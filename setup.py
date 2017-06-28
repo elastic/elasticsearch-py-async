@@ -16,10 +16,10 @@ install_requires = [
 ]
 
 tests_require = [
-    'pytest',
-    'pytest-asyncio',
-    'pytest-cov',
-    'pytest-catchlog',
+    'pytest==3.1.2',
+    'pytest-asyncio==0.6.0',
+    'pytest-cov==2.5.1',
+    'pytest-catchlog==1.2.2',
 ]
 
 setup(
