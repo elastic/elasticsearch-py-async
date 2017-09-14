@@ -39,7 +39,7 @@ class AIOHttpConnection(Connection):
         )
 
     def close(self):
-        return self.session.close()
+        self.loop.run_until_complete(self.session.close())
 
     @asyncio.coroutine
     def perform_request(self, method, url, params=None, body=None, timeout=None, ignore=()):
