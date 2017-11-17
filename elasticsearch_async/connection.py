@@ -51,7 +51,7 @@ class AIOHttpConnection(Connection):
         start = self.loop.time()
         response = None
         try:
-            with aiohttp.Timeout(timeout or self.timeout):
+            with aiohttp.Timeout(timeout or self.timeout, loop=self.loop):
                 response = yield from self.session.request(method, url, data=body)
                 raw_data = yield from response.text()
             duration = self.loop.time() - start
