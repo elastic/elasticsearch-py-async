@@ -131,13 +131,13 @@ class AsyncTransport(Transport):
                 yield from c.close()
 
     @asyncio.coroutine
-    def main_loop(self, method, url, params, body, ignore=(), timeout=None):
+    def main_loop(self, method, url, params, body, headers=None, ignore=(), timeout=None):
         for attempt in range(self.max_retries + 1):
             connection = self.get_connection()
 
             try:
                 status, headers, data = yield from connection.perform_request(
-                        method, url, params, body, ignore=ignore, timeout=timeout)
+                        method, url, params, body, ignore=ignore, timeout=timeout, headers=headers)
             except TransportError as e:
                 if method == 'HEAD' and e.status_code == 404:
                     return False
@@ -169,7 +169,7 @@ class AsyncTransport(Transport):
                     data = self.deserializer.loads(data, headers.get('content-type'))
                 return data
 
-    def perform_request(self, method, url, params=None, body=None):
+    def perform_request(self, method, url, headers=None, params=None, body=None):
         if body is not None:
             body = self.serializer.dumps(body)
 
@@ -202,6 +202,7 @@ class AsyncTransport(Transport):
                 ignore = (ignore, )
 
         return ensure_future(self.main_loop(method, url, params, body,
+                                                    header=headers,
                                                     ignore=ignore,
                                                     timeout=timeout),
                              loop=self.loop)
