@@ -30,7 +30,8 @@ class AIOHttpConnection(Connection):
                 loop=self.loop,
                 verify_ssl=verify_certs,
                 use_dns_cache=use_dns_cache,
-            )
+            ),
+            headers={'content-type': 'application/json'}
         )
 
         self.base_url = 'http%s://%s:%d%s' % (
@@ -42,7 +43,7 @@ class AIOHttpConnection(Connection):
         return self.session.close()
 
     @asyncio.coroutine
-    def perform_request(self, method, url, params=None, body=None, timeout=None, ignore=()):
+    def perform_request(self, method, url, params=None, body=None, timeout=None, ignore=(), headers=None):
         url_path = url
         if params:
             url_path = '%s?%s' % (url, urlencode(params or {}))
@@ -52,7 +53,7 @@ class AIOHttpConnection(Connection):
         response = None
         try:
             with aiohttp.Timeout(timeout or self.timeout):
-                response = yield from self.session.request(method, url, data=body)
+                response = yield from self.session.request(method, url, data=body, headers=headers)
                 raw_data = yield from response.text()
             duration = self.loop.time() - start
 
