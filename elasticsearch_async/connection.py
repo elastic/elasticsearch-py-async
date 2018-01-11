@@ -1,4 +1,6 @@
 import asyncio
+import ssl
+import warnings
 
 import aiohttp
 from aiohttp.client_exceptions import ServerFingerprintMismatch
