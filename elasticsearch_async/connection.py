@@ -5,7 +5,7 @@ import warnings
 import aiohttp
 from aiohttp.client_exceptions import ServerFingerprintMismatch
 
-from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, SSLError
+from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, ImproperlyConfigured, SSLError
 from elasticsearch.connection import Connection
 from elasticsearch.compat import urlencode
 from elasticsearch.connection.http_urllib3 import create_ssl_context
