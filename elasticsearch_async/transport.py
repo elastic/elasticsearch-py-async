@@ -4,19 +4,23 @@ import logging
 from itertools import chain
 
 from elasticsearch import Transport, TransportError, ConnectionTimeout, ConnectionError, SerializationError
+from elasticsearch.connection_pool import DummyConnectionPool
 
 from .connection import AIOHttpConnection
+from .connection_pool import AsyncConnectionPool, AsyncDummyConnectionPool
 from .helpers import ensure_future
 
 logger = logging.getLogger('elasticsearch')
 
 class AsyncTransport(Transport):
     def __init__(self, hosts, connection_class=AIOHttpConnection, loop=None,
+                 connection_pool_class=AsyncConnectionPool,
                  sniff_on_start=False, raise_on_sniff_error=True, **kwargs):
         self.raise_on_sniff_error = raise_on_sniff_error
         self.loop = asyncio.get_event_loop() if loop is None else loop
         kwargs['loop'] = self.loop
-        super().__init__(hosts, connection_class=connection_class, sniff_on_start=False, **kwargs)
+        super().__init__(hosts, connection_class=connection_class, sniff_on_start=False, 
+                         connection_pool_class=connection_pool_class, **kwargs)
 
         self.sniffing_task = None
         if sniff_on_start:
@@ -42,10 +46,16 @@ class AsyncTransport(Transport):
         if self.sniffing_task is None:
             self.sniffing_task = ensure_future(self.sniff_hosts(initial), loop=self.loop)
 
+    @asyncio.coroutine
     def close(self):
         if self.sniffing_task:
             self.sniffing_task.cancel()
-        super().close()
+        yield from self.connection_pool.close()
+
+    def set_connections(self, hosts):
+        super().set_connections(hosts)
+        if isinstance(self.connection_pool, DummyConnectionPool):
+            self.connection_pool = AsyncDummyConnectionPool(self.connection_pool.connection_opts)
 
     def get_connection(self):
         if self.sniffer_timeout:

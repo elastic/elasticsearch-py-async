@@ -80,8 +80,9 @@ class AIOHttpConnection(Connection):
             host, port, self.url_prefix
         )
 
+    @asyncio.coroutine
     def close(self):
-        return self.session.close()
+        yield from self.session.close()
 
     @asyncio.coroutine
     def perform_request(self, method, url, params=None, body=None, timeout=None, ignore=(), headers=None):

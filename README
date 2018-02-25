@@ -21,8 +21,8 @@ Example::
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(print_info())
+    loop.run_until_complete(client.transport.close())
     loop.close()
-    client.transport.close()
 
 
 Example with SSL Context::
@@ -46,8 +46,8 @@ Example with SSL Context::
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(print_info())
+    loop.run_until_complete(client.transport.close())
     loop.close()
-    client.transport.close()
 
 
 

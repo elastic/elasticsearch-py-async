@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 
 from pytest import yield_fixture, fixture
 
@@ -11,7 +12,7 @@ from elasticsearch_async import AIOHttpConnection, AsyncElasticsearch
 def connection(event_loop, server, port):
     connection = AIOHttpConnection(port=port, loop=event_loop)
     yield connection
-    connection.close()
+    event_loop.run_until_complete(connection.close())
 
 
 class DummyElasticsearch(aiohttp.web.Server):
@@ -61,7 +62,7 @@ def port():
 
 @yield_fixture
 def server(event_loop, port):
-    server = DummyElasticsearch(debug=True, keep_alive=75)
+    server = DummyElasticsearch(debug=True, loop=event_loop)
     f = event_loop.create_server(server, '127.0.0.1', port)
     event_loop.run_until_complete(f)
     yield server
@@ -69,9 +70,11 @@ def server(event_loop, port):
 
 @yield_fixture
 def client(event_loop, server, port):
+    logger = logging.getLogger('elasticsearch')
+    logger.setLevel(logging.DEBUG)
     c = AsyncElasticsearch([{'host': '127.0.0.1','port': port}], loop=event_loop)
     yield c
-    c.transport.close()
+    event_loop.run_until_complete(c.transport.close())
 
 @fixture
 def sniff_data():
