@@ -9,8 +9,8 @@ class AsyncConnectionPool(ConnectionPool):
         super().__init__(connections, **kwargs)
 
     async def close(self):
-        await asyncio.gather(*[conn.close() for conn in self.orig_connections],
-                             loop=self.loop)
+        await asyncio.wait([conn.close() for conn in self.orig_connections],
+                           loop=self.loop)
 
 
 class AsyncDummyConnectionPool(DummyConnectionPool):

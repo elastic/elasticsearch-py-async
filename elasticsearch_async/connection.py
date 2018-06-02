@@ -99,6 +99,9 @@ class AIOHttpConnection(Connection):
                 raw_data = yield from response.text()
             duration = self.loop.time() - start
 
+        except asyncio.CancelledError:
+            raise
+
         except Exception as e:
             self.log_request_fail(method, url, url_path, body, self.loop.time() - start, exception=e)
             if isinstance(e, ServerFingerprintMismatch):
