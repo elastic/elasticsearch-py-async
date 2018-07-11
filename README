@@ -11,17 +11,14 @@ Example::
 
     import asyncio
     from elasticsearch_async import AsyncElasticsearch
+    hosts = ['localhost', 'other-host']
 
-    client = AsyncElasticsearch(hosts=['localhost', 'other-host'])
-
-    @asyncio.coroutine
-    def print_info():
-        info = yield from client.info()
-        print(info)
+    async def print_info():
+        async with AsyncElasticsearch(hosts=hosts) as client:
+              print(await client.info())
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(print_info())
-    loop.run_until_complete(client.transport.close())
     loop.close()
 
 
