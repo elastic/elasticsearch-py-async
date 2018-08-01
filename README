@@ -7,7 +7,27 @@ response.
 
 Sniffing (when requested) is also done via a scheduled coroutine.
 
-Example::
+Example for python 3.5+
+
+.. code-block:: python
+
+    import asyncio
+    from elasticsearch_async import AsyncElasticsearch
+
+    client = AsyncElasticsearch(hosts=['localhost', 'other-host'])
+
+    async def print_info():
+        info = await client.info()
+        print(info)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(print_info())
+    loop.run_until_complete(client.transport.close())
+    loop.close()
+
+Example for python 3.4
+
+.. code-block:: python
 
     import asyncio
     from elasticsearch_async import AsyncElasticsearch
@@ -25,7 +45,9 @@ Example::
     loop.close()
 
 
-Example with SSL Context::
+Example with SSL Context
+
+.. code-block:: python
 
     import asyncio
     from elasticsearch_async import AsyncElasticsearch
@@ -61,9 +83,12 @@ used to pass in an event loop you wish the client to use. By default
 Installation
 ------------
 
-``elasticsearch-async`` is available via PyPI so you can install it using pip::
+``elasticsearch-async`` is available via PyPI so you can install it using pip
+
+.. code-block:: bash
 
     pip install elasticsearch-async
+
 
 License
 -------
