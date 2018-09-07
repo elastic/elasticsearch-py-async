@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 
 from pytest import yield_fixture, fixture
 
@@ -11,7 +12,7 @@ from elasticsearch_async import AIOHttpConnection, AsyncElasticsearch
 def connection(event_loop, server, port):
     connection = AIOHttpConnection(port=port, loop=event_loop)
     yield connection
-    connection.close()
+    event_loop.run_until_complete(connection.close())
 
 
 class DummyElasticsearch(aiohttp.web.Server):
@@ -49,7 +50,8 @@ class DummyElasticsearch(aiohttp.web.Server):
 
         out = json.dumps(body)
 
-        return aiohttp.web.Response(body=out, status=status, content_type='application/json')
+        return aiohttp.web.Response(body=out, status=status,
+                                    content_type='application/json')
 
 
 i = 0
@@ -61,17 +63,22 @@ def port():
 
 @yield_fixture
 def server(event_loop, port):
-    server = DummyElasticsearch(debug=True, keep_alive=75)
+    server = DummyElasticsearch(debug=True, loop=event_loop)
     f = event_loop.create_server(server, '127.0.0.1', port)
     event_loop.run_until_complete(f)
     yield server
     event_loop.run_until_complete(server.shutdown(timeout=.5))
 
+
 @yield_fixture
 def client(event_loop, server, port):
-    c = AsyncElasticsearch([{'host': '127.0.0.1','port': port}], loop=event_loop)
+    logger = logging.getLogger('elasticsearch')
+    logger.setLevel(logging.DEBUG)
+    c = AsyncElasticsearch([{'host': '127.0.0.1', 'port': port}],
+                           loop=event_loop)
     yield c
-    c.transport.close()
+    event_loop.run_until_complete(c.transport.close())
+
 
 @fixture
 def sniff_data():
@@ -87,7 +94,8 @@ def sniff_data():
                 "version": "2.1.0",
                 "build": "72cd1f1",
                 "http" : {
-                    "bound_address" : [ "[fe80::1]:9200", "[::1]:9200", "127.0.0.1:9200" ],
+                    "bound_address" : [ "[fe80::1]:9200", "[::1]:9200",
+                                        "127.0.0.1:9200" ],
                     "publish_address" : "node1:9200",
                     "max_content_length_in_bytes" : 104857600
                 },

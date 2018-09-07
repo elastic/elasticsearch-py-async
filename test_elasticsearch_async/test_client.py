@@ -8,14 +8,16 @@ def test_custom_body(server, client):
     data = yield from client.info()
 
     assert [('GET', '/', '', {})] == server.calls
-    assert  {'custom': 'body'} == data
+    assert {'custom': 'body'} == data
+
 
 @mark.asyncio
 def test_info_works(server, client):
     data = yield from client.info()
 
     assert [('GET', '/', '', {})] == server.calls
-    assert  {'body': '', 'method': 'GET', 'params': {}, 'path': '/'} == data
+    assert {'body': '', 'method': 'GET', 'params': {}, 'path': '/'} == data
+
 
 @mark.asyncio
 def test_ping_works(server, client):
@@ -24,6 +26,7 @@ def test_ping_works(server, client):
     assert [('HEAD', '/', '', {})] == server.calls
     assert data is True
 
+
 @mark.asyncio
 def test_exists_with_404_returns_false(server, client):
     server.register_response('/not-there', status=404)
@@ -31,18 +34,21 @@ def test_exists_with_404_returns_false(server, client):
 
     assert data is False
 
+
 @mark.asyncio
 def test_404_properly_raised(server, client):
     server.register_response('/i/t/42', status=404)
     with raises(NotFoundError):
         yield from client.get(index='i', doc_type='t', id=42)
 
+
 @mark.asyncio
 def test_body_gets_passed_properly(client):
     data = yield from client.index(index='i', doc_type='t', id='42', body={'some': 'data'})
-    assert  {'body': {'some': 'data'}, 'method': 'PUT', 'params': {}, 'path': '/i/t/42'} == data
+    assert {'body': {'some': 'data'}, 'method': 'PUT', 'params': {}, 'path': '/i/t/42'} == data
+
 
 @mark.asyncio
 def test_params_get_passed_properly(client):
     data = yield from client.info(params={'some': 'data'})
-    assert  {'body': '', 'method': 'GET', 'params': {'some': 'data'}, 'path': '/'} == data
+    assert {'body': '', 'method': 'GET', 'params': {'some': 'data'}, 'path': '/'} == data
