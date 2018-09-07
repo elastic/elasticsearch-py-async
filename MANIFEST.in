@@ -1,0 +1,13 @@
+include AUTHORS
+include Changelog.rst
+include CONTRIBUTING.md
+include LICENSE
+include MANIFEST.in
+include README.rst
+include README
+include setup.py
+recursive-include docs *
+ prune docs/_build
+prune test_elasticsearch_async
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]

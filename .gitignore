@@ -7,6 +7,7 @@ dist
 build
 *.egg
 coverage.xml
+.pytest_cache
 junit.xml
 test_elasticsearch_async/htmlcov
 docs/_build

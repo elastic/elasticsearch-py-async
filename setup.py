@@ -11,15 +11,15 @@ long_description = f.read().strip()
 f.close()
 
 install_requires = [
-    'aiohttp',
-    'elasticsearch>=5.0.0',
+    'aiohttp>=3.0.0',
+    'async_timeout>=2.0',
+    'elasticsearch>=5.0.0, <6.0.0',
 ]
 
 tests_require = [
     'pytest',
     'pytest-asyncio',
     'pytest-cov',
-    'pytest-catchlog',
 ]
 
 setup(
@@ -41,12 +41,14 @@ setup(
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: Implementation :: CPython",
     ],
     install_requires=install_requires,
+    python_requires="~=3.5",
 
     test_suite="test_elasticsearch_async.run_tests.run_all",
     tests_require=tests_require,
