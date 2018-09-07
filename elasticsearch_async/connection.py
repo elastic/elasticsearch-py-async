@@ -1,9 +1,11 @@
 import asyncio
 
 import aiohttp
+import async_timeout
 from aiohttp.client_exceptions import ServerFingerprintMismatch
 
-from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, SSLError
+from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, \
+    SSLError
 from elasticsearch.connection import Connection
 from elasticsearch.compat import urlencode
 
@@ -11,7 +13,8 @@ from elasticsearch.compat import urlencode
 class AIOHttpConnection(Connection):
     def __init__(self, host='localhost', port=9200, http_auth=None,
             use_ssl=False, verify_certs=False, ca_certs=None, client_cert=None,
-            client_key=None, loop=None, use_dns_cache=True, **kwargs):
+            client_key=None, loop=None, use_dns_cache=True, headers=None,
+                 **kwargs):
         super().__init__(host=host, port=port, **kwargs)
 
         self.loop = asyncio.get_event_loop() if loop is None else loop
@@ -23,14 +26,18 @@ class AIOHttpConnection(Connection):
             if isinstance(http_auth, (tuple, list)):
                 http_auth = aiohttp.BasicAuth(*http_auth)
 
+        headers = headers or {}
+        headers.setdefault('content-type', 'application/json')
+
         self.session = aiohttp.ClientSession(
             auth=http_auth,
             conn_timeout=self.timeout,
             connector=aiohttp.TCPConnector(
                 loop=self.loop,
-                verify_ssl=verify_certs,
+                ssl=verify_certs,
                 use_dns_cache=use_dns_cache,
-            )
+            ),
+            headers=headers
         )
 
         self.base_url = 'http%s://%s:%d%s' % (
@@ -38,11 +45,13 @@ class AIOHttpConnection(Connection):
             host, port, self.url_prefix
         )
 
+    @asyncio.coroutine
     def close(self):
-        return self.session.close()
+        yield from self.session.close()
 
     @asyncio.coroutine
-    def perform_request(self, method, url, params=None, body=None, timeout=None, ignore=()):
+    def perform_request(self, method, url, params=None, body=None,
+                        timeout=None, ignore=(), headers=None):
         url_path = url
         if params:
             url_path = '%s?%s' % (url, urlencode(params or {}))
@@ -51,13 +60,20 @@ class AIOHttpConnection(Connection):
         start = self.loop.time()
         response = None
         try:
-            with aiohttp.Timeout(timeout or self.timeout):
-                response = yield from self.session.request(method, url, data=body)
+            with async_timeout.timeout(timeout or self.timeout,
+                                       loop=self.loop):
+                response = yield from self.session.request(
+                    method, url, data=body, headers=headers
+                )
                 raw_data = yield from response.text()
             duration = self.loop.time() - start
 
+        except asyncio.CancelledError:
+            raise
+
         except Exception as e:
-            self.log_request_fail(method, url, url_path, body, self.loop.time() - start, exception=e)
+            self.log_request_fail(method, url, url_path, body,
+                                  self.loop.time() - start, exception=e)
             if isinstance(e, ServerFingerprintMismatch):
                 raise SSLError('N/A', str(e), e)
             if isinstance(e, asyncio.TimeoutError):
@@ -68,11 +84,16 @@ class AIOHttpConnection(Connection):
             if response is not None:
                 yield from response.release()
 
-        # raise errors based on http status codes, let the client handle those if needed
-        if not (200 <= response.status < 300) and response.status not in ignore:
-            self.log_request_fail(method, url, url_path, body, duration, status_code=response.status, response=raw_data)
+        # raise errors based on http status codes,
+        # let the client handle those if needed
+        if not (200 <= response.status < 300) and \
+                response.status not in ignore:
+            self.log_request_fail(method, url, url_path, body, duration,
+                                  status_code=response.status,
+                                  response=raw_data)
             self._raise_error(response.status, raw_data)
 
-        self.log_request_success(method, url, url_path, body, response.status, raw_data, duration)
+        self.log_request_success(method, url, url_path, body, response.status,
+                                 raw_data, duration)
 
         return response.status, response.headers, raw_data
