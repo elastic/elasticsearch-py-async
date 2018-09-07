@@ -61,6 +61,7 @@ def port():
     i += 1
     return 8080 + i
 
+
 @yield_fixture
 def server(event_loop, port):
     server = DummyElasticsearch(debug=True, loop=event_loop)
