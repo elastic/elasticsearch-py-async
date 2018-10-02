@@ -14,5 +14,6 @@ class AsyncConnectionPool(ConnectionPool):
 
 
 class AsyncDummyConnectionPool(DummyConnectionPool):
-    async def close(self):
-        await self.connection.close()
+    @asyncio.coroutine
+    def close(self):
+        await (self.connection.close())
