@@ -1,0 +1,21 @@
+language: python
+
+jdk:
+  oraclejdk9
+
+python:
+  - 3.5
+  - 3.6
+  - 3.7-dev
+
+env:
+  - ES_VERSION=6.4.3
+
+before_install:
+  - docker run -d -p 9200:9200 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch-oss:$ES_VERSION
+
+install:
+  - pip install .[develop]
+
+script:
+  - pytest
