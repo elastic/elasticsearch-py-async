@@ -12,7 +12,7 @@ ensure_future = (getattr(asyncio, 'ensure_future', None) or
                  getattr(asyncio, 'async', None))
 
 
-class Scan:
+class _Scan:
     def __init__(self, client, query=None, scroll='5m', raise_on_error=True,
                  preserve_order=False, size=1000, request_timeout=None,
                  clear_scroll=True, scroll_kwargs=None, **kwargs):
@@ -122,4 +122,4 @@ class Scan:
         self._hits.extend(resp['hits']['hits'])
 
 
-scan = Scan
+scan = _Scan

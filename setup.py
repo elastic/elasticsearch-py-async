@@ -20,6 +20,7 @@ tests_require = [
     'pytest',
     'pytest-asyncio',
     'pytest-cov',
+    'pytest-mock',
 ]
 
 setup(

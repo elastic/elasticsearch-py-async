@@ -100,3 +100,11 @@ def sniff_data():
             }
         }
     }
+
+
+@fixture
+async def es():
+    es = AsyncElasticsearch()
+    await es.indices.delete('test_*', ignore=404)
+    yield es
+    await es.transport.close()
