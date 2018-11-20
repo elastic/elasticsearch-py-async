@@ -80,7 +80,7 @@ async def test_scan_error(es, mocker):
     assert len(res) == 8
 
     warning_mock = mocker.patch('elasticsearch_async.helpers.logger.warning')
-    mock_request = mocker.patch.object(
+    mocker.patch.object(
         es.transport,
         'perform_request',
         wraps=failing_shard(es.transport.perform_request)

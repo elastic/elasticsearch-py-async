@@ -4,7 +4,6 @@ from collections import deque
 
 from elasticsearch.helpers import ScanError
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -20,12 +19,8 @@ class _Scan:
         Simple abstraction on top of the
         :meth:`~elasticsearch_async.AsyncElasticsearch.scroll` api - a simple
         iterator that yields all hits as returned by underlining scroll requests.
-
-        By default scan does not return results in any pre-determined order. To
-        have a standard order in the returned documents (either by score or
-        explicit sort definition) when scrolling, use ``preserve_order=True``. This
-        may be an expensive operation and will negate the performance benefits of
-        using ``scan``
+        For the sake of naming compatibility with sync library, public interface
+        is ``elasticsearch_async.helpers.scan``
 
         Args:
             client (elasticsearch_async.AsyncElasticsearch): async client to use
@@ -37,8 +32,8 @@ class _Scan:
             preserve_order (bool): if to preserve sorting from query.
                 If set to ``False``, documents will be sorted by ``doc`` —
                 this leverages internal optimization for faster scrolling.
-                Setting this to ``True`` may be extremely expensive.
-                ``False`` by default
+                Setting this to ``True`` may be extremely expensive and negate
+                benefits of scrolling. ``False`` by default
             size (int): Batch size (per shard) for every iteration
             request_timeout (str): explicit timeout for each call to ``scan``.
               Must correspond ``Time units`` format, look to
@@ -55,7 +50,21 @@ class _Scan:
             ScanError: raised when ``raise_on_error is True`` and any shard fails
 
         Examples:
-            # TODO
+            Scan over all documents::
+                aes = AsyncElasticsearch()
+                async for doc in scan(aes): ...
+
+            Get all documents from ``async`` index::
+                async_docs = [d async for d in scan(aes, index='async')]
+
+            Filter documents by ``topic`` term::
+                async_gen = scan(
+                    aes,
+                    query={'query': {'term': {'topic': 'async'}}})
+                async_docs = [d async for d in async_gen]
+
+            Get all documents, fetch documents 100 at time, ignore failures::
+                async for d in scan(aes, size=100, raise_on_error=False): ...
         """
         self.client = client
         self.query = query or {}
