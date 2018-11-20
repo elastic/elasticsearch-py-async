@@ -34,12 +34,16 @@ class _Scan:
                 maintained for scrolled search
             raise_on_error (bool): if to raise ``ScanError`` when some shards fail.
                 ``True`` by default
-            preserve_order (): don't set the ``search_type`` to ``scan`` — this will
-                cause the scroll to paginate with preserving the order. Note that this
-                can be an extremely expensive operation and can easily lead to
-                unpredictable results, use with caution  # TODO: type? human-readable doc?
+            preserve_order (bool): if to preserve sorting from query.
+                If set to ``False``, documents will be sorted by ``doc`` —
+                this leverages internal optimization for faster scrolling.
+                Setting this to ``True`` may be extremely expensive.
+                ``False`` by default
             size (int): Batch size (per shard) for every iteration
-            request_timeout (): explicit timeout for each call to ``scan``  # TODO: type?
+            request_timeout (str): explicit timeout for each call to ``scan``.
+              Must correspond ``Time units`` format, look to
+              https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#time-units
+              for details
             clear_scroll (bool): if to delete scroll state in ES after getting
                 error or consuming all results. Default is ``True``
             scroll_kwargs (dict): additional kwargs to be passed to
