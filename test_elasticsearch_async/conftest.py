@@ -1,10 +1,12 @@
 import asyncio
 import json
 import logging
-
-from pytest import yield_fixture, fixture
+import time
 
 import aiohttp.web
+from elasticsearch import Elasticsearch
+from pytest import fixture, yield_fixture
+
 from elasticsearch_async import AIOHttpConnection, AsyncElasticsearch
 
 
@@ -102,9 +104,26 @@ def sniff_data():
     }
 
 
+@fixture(scope='session')
+def es_available():
+    """
+    This fixture is a hack to checking ES server availability.
+    Seems that it's better to make it via sync client once per session instead
+    of making check for every test case or patching ``event_loop`` fixture
+    """
+    timeout = 10  # seconds
+    es = Elasticsearch()
+    for _ in range(timeout * 10):
+        try:
+            es.ping()
+            return
+        except ConnectionError:
+            time.sleep(timeout / 10)
+
+
 @fixture
-async def es():
-    es = AsyncElasticsearch()
-    await es.indices.delete('test_*', ignore=404)
+def es(event_loop, es_available):
+    es = AsyncElasticsearch(loop=event_loop)
+    event_loop.run_until_complete(es.indices.delete('test_*', ignore=404))
     yield es
-    await es.transport.close()
+    event_loop.run_until_complete(es.transport.close())

@@ -35,7 +35,9 @@ async def es_data(es):
 async def test_basic(es, mocker):
     mocker.spy(es.transport, 'perform_request')
 
-    docs = [d async for d in scan(es, size=5)]
+    docs = []
+    async for d in scan(es, size=5):
+        docs.append(d)
     assert len(docs) == 8
     assert {d['_id'] for d in docs} == set(map(str, range(1, 9)))
     assert {d['_source']['field'] for d in docs} == set('abcdefgh')
@@ -56,14 +58,17 @@ async def _active_scrolls(es):
 async def test_cleanup(es):
     assert await _active_scrolls(es) == 0
 
-    _ = [d async for d in scan(es, clear_scroll=True)]
+    async for _ in scan(es, clear_scroll=True):
+        pass
     assert await _active_scrolls(es) == 0
 
-    generator = scan(es, clear_scroll=False)
-    _ = [d async for d in generator]
-    assert await _active_scrolls(es) != 0
-
-    await es.clear_scroll(scroll_id=generator._scroll_id)
+    scroller = scan(es, clear_scroll=False)
+    try:
+        async for _ in scroller:
+            pass
+        assert await _active_scrolls(es) != 0
+    finally:
+        await es.clear_scroll(scroll_id=scroller._scroll_id)
 
 
 async def test_scan_error(es, mocker):
@@ -76,7 +81,9 @@ async def test_scan_error(es, mocker):
             return response
         return wrapper
 
-    res = [d async for d in scan(es)]
+    res = []
+    async for d in scan(es):
+        res.append(d)
     assert len(res) == 8
 
     warning_mock = mocker.patch('elasticsearch_async.helpers.logger.warning')
@@ -87,12 +94,15 @@ async def test_scan_error(es, mocker):
     )
 
     with pytest.raises(ScanError):
-        _ = [d async for d in scan(es)]
+        async for _ in scan(es):
+            pass
     assert warning_mock.called
     assert await _active_scrolls(es) == 0
 
     mocker.resetall()
-    res = [d async for d in scan(es, raise_on_error=False)]
+    res = []
+    async for d in scan(es, raise_on_error=False):
+        res.append(d)
     assert len(res) == 8
     assert warning_mock.called
     assert await _active_scrolls(es) == 0
