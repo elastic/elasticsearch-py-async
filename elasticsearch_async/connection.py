@@ -16,7 +16,7 @@ class AIOHttpConnection(Connection):
     def __init__(self, host='localhost', port=9200, http_auth=None,
             use_ssl=False, verify_certs=False, ca_certs=None, client_cert=None,
             client_key=None, loop=None, use_dns_cache=True, headers=None,
-            ssl_context=None, **kwargs):
+            ssl_context=None, trace_configs=None, **kwargs):
         super().__init__(host=host, port=port, **kwargs)
 
         self.loop = asyncio.get_event_loop() if loop is None else loop
@@ -71,6 +71,7 @@ class AIOHttpConnection(Connection):
                 verify_ssl=verify_certs,
                 use_dns_cache=use_dns_cache,
                 ssl_context=ssl_context,
+                trace_configs=trace_configs,
             ),
             headers=headers
         )
