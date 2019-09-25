@@ -65,12 +65,12 @@ class AIOHttpConnection(Connection):
 
         self.session = aiohttp.ClientSession(
             auth=http_auth,
-            conn_timeout=self.timeout,
+            timeout=self.timeout,
             connector=aiohttp.TCPConnector(
                 loop=self.loop,
                 verify_ssl=verify_certs,
                 use_dns_cache=use_dns_cache,
-                ssl_context=ssl_context,
+                ssl=ssl_context,
             ),
             headers=headers
         )
