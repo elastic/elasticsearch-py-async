@@ -96,7 +96,8 @@ class AIOHttpConnection(Connection):
         try:
             with async_timeout.timeout(timeout or self.timeout, loop=self.loop):
                 response = yield from self.session.request(method, url, data=body, headers=headers)
-                raw_data = yield from response.text()
+                raw_data = yield from response.content.read()
+                raw_data = raw_data.decode('utf-8', errors='surrogatepass')
             duration = self.loop.time() - start
 
         except asyncio.CancelledError:
