@@ -16,7 +16,7 @@ class AIOHttpConnection(Connection):
     def __init__(self, host='localhost', port=9200, http_auth=None,
             use_ssl=False, verify_certs=False, ca_certs=None, client_cert=None,
             client_key=None, loop=None, use_dns_cache=True, headers=None,
-            ssl_context=None, **kwargs):
+            ssl_context=None, scheme=None, **kwargs):
         super().__init__(host=host, port=port, **kwargs)
 
         self.loop = asyncio.get_event_loop() if loop is None else loop
@@ -35,7 +35,7 @@ class AIOHttpConnection(Connection):
         if ssl_context and (verify_certs or ca_certs):
             raise ImproperlyConfigured("When using `ssl_context`, `use_ssl`, `verify_certs`, `ca_certs` are not permitted")
 
-        if use_ssl or ssl_context:
+        if use_ssl or ssl_context or scheme == 'https':
             cafile = ca_certs
             if not cafile and not ssl_context and verify_certs:
                 # If no ca_certs and no sslcontext passed and asking to verify certs
