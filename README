@@ -7,7 +7,7 @@ response.
 
 Sniffing (when requested) is also done via a scheduled coroutine.
 
-Example for python 3.5+
+Example for python 3.6+
 
 .. code-block:: python
 
@@ -23,22 +23,6 @@ Example for python 3.5+
     loop = asyncio.get_event_loop()
     loop.run_until_complete(print_info())
     loop.run_until_complete(client.transport.close())
-    loop.close()
-
-Example for python 3.4
-
-.. code-block:: python
-
-    import asyncio
-    from elasticsearch_async import AsyncElasticsearch
-    hosts = ['localhost', 'other-host']
-
-    async def print_info():
-        async with AsyncElasticsearch(hosts=hosts) as client:
-              print(await client.info())
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(print_info())
     loop.close()
 
 
@@ -58,9 +42,8 @@ Example with SSL Context
         http_auth=('elastic', 'changeme')
     )
 
-    @asyncio.coroutine
-    def print_info():
-        info = yield from client.info()
+    async def print_info():
+        info = await client.info()
         print(info)
 
     loop = asyncio.get_event_loop()
