@@ -12,3 +12,4 @@ junit.xml
 test_elasticsearch_async/htmlcov
 docs/_build
 .cache
+.eggs
