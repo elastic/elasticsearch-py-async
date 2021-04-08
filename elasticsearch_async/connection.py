@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import ssl
 import warnings
 
@@ -9,7 +10,10 @@ import async_timeout
 from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, ImproperlyConfigured, SSLError
 from elasticsearch.connection import Connection
 from elasticsearch.compat import urlencode
-from elasticsearch.connection.http_urllib3 import create_ssl_context
+try:
+    from elasticsearch.connection.http_urllib3 import create_ssl_context
+except:
+    pass
 
 
 class AIOHttpConnection(Connection):
@@ -80,9 +84,11 @@ class AIOHttpConnection(Connection):
             host, port, self.url_prefix
         )
 
-    @asyncio.coroutine
+    # @asyncio.coroutine
     def close(self):
-        yield from self.session.close()
+        print("close")
+        print(self.session)
+        return self.session.close()
 
     @asyncio.coroutine
     def perform_request(self, method, url, params=None, body=None, timeout=None, ignore=(), headers=None):
@@ -112,7 +118,10 @@ class AIOHttpConnection(Connection):
 
         finally:
             if response is not None:
-                yield from response.release()
+                try:
+                    yield from response.release()
+                except TypeError:
+                    pass
 
         # raise errors based on http status codes, let the client handle those if needed
         if not (200 <= response.status < 300) and response.status not in ignore:
