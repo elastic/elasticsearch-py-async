@@ -9,7 +9,10 @@ import async_timeout
 from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, ImproperlyConfigured, SSLError
 from elasticsearch.connection import Connection
 from elasticsearch.compat import urlencode
-from elasticsearch.connection.http_urllib3 import create_ssl_context
+try:
+    from elasticsearch.connection.http_urllib3 import create_ssl_context
+except:
+    pass
 
 
 class AIOHttpConnection(Connection):
@@ -112,7 +115,10 @@ class AIOHttpConnection(Connection):
 
         finally:
             if response is not None:
-                yield from response.release()
+                try:
+                    yield from response.release()
+                except TypeError:
+                    pass
 
         # raise errors based on http status codes, let the client handle those if needed
         if not (200 <= response.status < 300) and response.status not in ignore:
