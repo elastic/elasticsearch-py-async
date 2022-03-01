@@ -97,7 +97,7 @@ class AIOHttpConnection(Connection):
         start = self.loop.time()
         response = None
         try:
-            with async_timeout.timeout(timeout or self.timeout, loop=self.loop):
+            with async_timeout.timeout(timeout or self.timeout):
                 response = yield from self.session.request(method, url, data=body, headers=headers)
                 raw_data = yield from response.text()
             duration = self.loop.time() - start
